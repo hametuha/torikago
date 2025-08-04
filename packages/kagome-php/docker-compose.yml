@@ -1,0 +1,13 @@
+version: '3.8'
+
+services:
+  php:
+    build: .
+    volumes:
+      - .:/app
+      - /Users/guy/Documents/GitHub/php-kagome/bin:/usr/local/bin/kagome-binary
+    working_dir: /app
+    stdin_open: true
+    tty: true
+    environment:
+      - COMPOSER_ALLOW_SUPERUSER=1

@@ -1,0 +1,21 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mkdir:*)",
+      "Bash(ls:*)",
+      "Bash(bin/kagome-binary/kagome-cli-macos-arm64:*)",
+      "Bash(composer install:*)",
+      "Bash(vendor/bin/phpunit:*)",
+      "Bash(composer test)",
+      "Bash(composer update:*)",
+      "Bash(composer phpcs:*)",
+      "Bash(composer check:*)",
+      "Bash(rm:*)",
+      "Bash(docker-compose build:*)",
+      "Bash(docker-compose run:*)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:zenn.dev)"
+    ],
+    "deny": []
+  }
+}

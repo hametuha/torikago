@@ -1,0 +1,9 @@
+vendor/
+.git/
+.gitignore
+.dockerignore
+Dockerfile
+docker-compose.yml
+Makefile
+*.log
+.DS_Store

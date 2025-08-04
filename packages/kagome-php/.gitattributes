@@ -1,0 +1,27 @@
+# Files to exclude from composer package archives
+/.github/            export-ignore
+/.gitattributes      export-ignore
+/.gitignore         export-ignore
+/docker-compose.yml export-ignore
+/Dockerfile         export-ignore
+/.dockerignore      export-ignore
+/tests/             export-ignore
+/examples/          export-ignore
+/phpunit.xml.dist   export-ignore
+/phpcs.xml          export-ignore
+
+# Note: README.md is included in the package for documentation
+
+# Treat these as text files
+*.php text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+*.xml text eol=lf
+*.yml text eol=lf
+*.yaml text eol=lf
+
+# Binary files
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary

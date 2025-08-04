@@ -1,0 +1,3 @@
+# Test user dictionary for kagome-php
+テスト単語,テスト 単語,テスト タンゴ,名詞
+カスタム語,カスタム語,カスタムゴ,名詞
