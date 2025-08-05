@@ -1,0 +1,32 @@
+{
+  "name": "wp-kagome-analyzer",
+  "version": "1.0.0",
+  "description": "WordPress plugin for Japanese text morphological analysis using Kagome",
+  "scripts": {
+    "env": "wp-env",
+    "start": "wp-env start",
+    "stop": "wp-env stop",
+    "update": "wp-env start --update",
+    "cli": "wp-env run cli wp",
+    "build": "echo 'No build process needed for basic plugin'"
+  },
+  "keywords": [
+    "wordpress",
+    "plugin",
+    "japanese",
+    "morphological-analysis",
+    "nlp",
+    "kagome"
+  ],
+  "author": "Fumiki Takahashi",
+  "license": "GPL-2.0-or-later",
+  "devDependencies": {
+    "@wordpress/env": "^10.0.0"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "volta": {
+    "node": "20.19.4"
+  }
+}

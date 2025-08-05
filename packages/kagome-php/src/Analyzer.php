@@ -1,8 +1,6 @@
 <?php
 
-namespace Kagome;
-
-use RuntimeException;
+namespace Hametuha\Kagome;
 
 /**
  * Kagome Japanese morphological analyzer wrapper for PHP
@@ -10,7 +8,7 @@ use RuntimeException;
  * This class provides a PHP interface to the Kagome morphological analyzer binary.
  * It handles process communication, error handling, and result parsing.
  *
- * @package Kagome
+ * @package Hametuha\Kagome
  */
 class Analyzer
 {
@@ -35,7 +33,7 @@ class Analyzer
      * Constructor
      *
      * @param string|null $binaryPath Optional path to kagome binary. If not provided, will auto-detect.
-     * @throws RuntimeException If the binary is not found or not executable
+     * @throws \RuntimeException If the binary is not found or not executable
      */
     public function __construct(?string $binaryPath = null)
     {
@@ -44,11 +42,11 @@ class Analyzer
         }
 
         if (!file_exists($binaryPath)) {
-            throw new RuntimeException("Kagome binary not found at: $binaryPath");
+            throw new \RuntimeException("Kagome binary not found at: $binaryPath");
         }
 
         if (!is_executable($binaryPath)) {
-            throw new RuntimeException("Kagome binary is not executable: $binaryPath");
+            throw new \RuntimeException("Kagome binary is not executable: $binaryPath");
         }
 
         $this->binaryPath = $binaryPath;
@@ -58,7 +56,7 @@ class Analyzer
      * Detect the appropriate kagome binary path based on the operating system
      *
      * @return string The detected binary path
-     * @throws RuntimeException If the operating system is not supported
+     * @throws \RuntimeException If the operating system is not supported
      */
     private function detectBinaryPath(): string
     {
@@ -73,7 +71,7 @@ class Analyzer
         } elseif (PHP_OS_FAMILY === 'Linux') {
             $binaryName = 'kagome-cli-linux';
         } else {
-            throw new RuntimeException('Unsupported operating system: ' . PHP_OS_FAMILY);
+            throw new \RuntimeException('Unsupported operating system: ' . PHP_OS_FAMILY);
         }
 
         // Check Docker path first
@@ -86,7 +84,7 @@ class Analyzer
             return $localPath . $binaryName;
         }
 
-        throw new RuntimeException(
+        throw new \RuntimeException(
             "Kagome binary not found. Tried: {$dockerPath}{$binaryName}, {$localPath}{$binaryName}"
         );
     }
@@ -102,7 +100,7 @@ class Analyzer
      *   - split: bool Use tiny sentence splitter (default: false)
      *   - udict: string|null Path to user dictionary file (default: null)
      * @return array<int, array{surface: string, features: array<int, string>}> Array of analyzed tokens
-     * @throws RuntimeException If the kagome process fails or output cannot be parsed
+     * @throws \RuntimeException If the kagome process fails or output cannot be parsed
      */
     public function analyze(string $text, array $options = []): array
     {
@@ -123,7 +121,7 @@ class Analyzer
             } else {
                 // Validate user dictionary file exists
                 if ($key === 'udict' && !file_exists($value)) {
-                    throw new RuntimeException("User dictionary file not found: $value");
+                    throw new \RuntimeException("User dictionary file not found: $value");
                 }
                 $command .= ' -' . $key . ' ' . escapeshellarg($value);
             }
@@ -138,7 +136,7 @@ class Analyzer
         $process = proc_open($command, $descriptorSpec, $pipes);
 
         if (!is_resource($process)) {
-            throw new RuntimeException('Failed to start kagome process');
+            throw new \RuntimeException('Failed to start kagome process');
         }
 
         fwrite($pipes[0], $text);
@@ -153,7 +151,7 @@ class Analyzer
         $exitCode = proc_close($process);
 
         if ($exitCode !== 0) {
-            throw new RuntimeException("Kagome process failed with exit code $exitCode: $error");
+            throw new \RuntimeException("Kagome process failed with exit code $exitCode: $error");
         }
 
         $output = trim($output);
@@ -165,7 +163,7 @@ class Analyzer
         $result = json_decode($output, true);
 
         if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
-            throw new RuntimeException('Failed to parse kagome output: ' . json_last_error_msg());
+            throw new \RuntimeException('Failed to parse kagome output: ' . json_last_error_msg());
         }
 
         return $result;

@@ -1,0 +1,53 @@
+{
+    "name": "hametuha/wp-kagome-analyzer",
+    "description": "WordPress plugin for Japanese text analysis using Kagome morphological analyzer",
+    "type": "wordpress-plugin",
+    "keywords": ["wordpress", "plugin", "japanese", "morphological-analysis", "nlp", "kagome"],
+    "license": "GPL-2.0-or-later",
+    "authors": [
+        {
+            "name": "Fumiki Takahashi",
+            "email": "fumikito@example.com"
+        }
+    ],
+    "require": {
+        "php": ">=8.1",
+        "hametuha/kagome-php": "@dev"
+    },
+    "repositories": [
+        {
+            "type": "path",
+            "url": "../../packages/kagome-php",
+            "options": {
+                "symlink": false
+            }
+        }
+    ],
+    "require-dev": {
+        "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
+        "wp-coding-standards/wpcs": "^3.0",
+        "phpunit/phpunit": "^9.5",
+        "yoast/wp-test-utils": "^1.2"
+    },
+    "autoload": {
+        "psr-4": {
+            "Hametuha\\KagomeWp\\": "src/"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "Hametuha\\KagomeWp\\Tests\\": "tests/"
+        }
+    },
+    "scripts": {
+        "phpcs": "phpcs",
+        "phpcs-fix": "phpcbf",
+        "test": "phpunit",
+        "check": ["@phpcs", "@test"]
+    },
+    "config": {
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        }
+    }
+}

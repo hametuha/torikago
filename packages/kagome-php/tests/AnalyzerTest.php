@@ -1,16 +1,15 @@
 <?php
 
-namespace Kagome\Tests;
+namespace Hametuha\Kagome\Tests;
 
-use Kagome\Analyzer;
+use Hametuha\Kagome\Analyzer;
 use PHPUnit\Framework\TestCase;
-use RuntimeException;
 
 /**
  * Test suite for the Kagome Analyzer class
  *
- * @package Kagome\Tests
- * @covers \Kagome\Analyzer
+ * @package Hametuha\Kagome\Tests
+ * @covers \Hametuha\Kagome\Analyzer
  */
 class AnalyzerTest extends TestCase
 {
@@ -88,7 +87,7 @@ class AnalyzerTest extends TestCase
      */
     public function testInvalidBinaryPath(): void
     {
-        $this->expectException(RuntimeException::class);
+        $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('Kagome binary not found at');
 
         new Analyzer('/path/to/nonexistent/binary');
@@ -154,7 +153,7 @@ class AnalyzerTest extends TestCase
      */
     public function testInvalidUserDictionaryPath(): void
     {
-        $this->expectException(RuntimeException::class);
+        $this->expectException(\RuntimeException::class);
         $this->expectExceptionMessage('User dictionary file not found');
 
         $this->analyzer->analyze('テスト', ['udict' => '/path/to/nonexistent/dict.txt']);

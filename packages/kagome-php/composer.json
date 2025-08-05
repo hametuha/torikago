@@ -1,5 +1,5 @@
 {
-    "name": "kagome/kagome-php",
+    "name": "hametuha/kagome-php",
     "description": "PHP wrapper for Kagome Japanese morphological analyzer",
     "type": "library",
     "keywords": ["kagome", "japanese", "morphological-analysis", "nlp"],
@@ -19,12 +19,12 @@
     },
     "autoload": {
         "psr-4": {
-            "Kagome\\": "src/"
+            "Hametuha\\Kagome\\": "src/"
         }
     },
     "autoload-dev": {
         "psr-4": {
-            "Kagome\\Tests\\": "tests/"
+            "Hametuha\\Kagome\\Tests\\": "tests/"
         }
     },
     "minimum-stability": "stable",

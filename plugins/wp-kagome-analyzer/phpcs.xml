@@ -1,0 +1,79 @@
+<?xml version="1.0"?>
+<ruleset name="WordPress Plugin Coding Standard">
+	<description>Coding standards for Kagome WordPress Plugin</description>
+
+	<!-- Files to check -->
+	<file>.</file>
+
+	<!-- Exclude patterns -->
+	<exclude-pattern>*/vendor/*</exclude-pattern>
+	<exclude-pattern>*/node_modules/*</exclude-pattern>
+	<exclude-pattern>*/assets/js/build/*</exclude-pattern>
+	<exclude-pattern>*/tests/*</exclude-pattern>
+
+	<!-- Rules -->
+	<rule ref="WordPress">
+		<!-- Allow short array syntax -->
+		<exclude name="Generic.Arrays.DisallowShortArraySyntax"/>
+		
+		<!-- Allow multiple variable assignments -->
+		<exclude name="Squiz.PHP.DisallowMultipleAssignments"/>
+		
+		<!-- Relax file name restrictions for modern development -->
+		<exclude name="WordPress.Files.FileName"/>
+	</rule>
+
+	<!-- Additional WordPress rules -->
+	<rule ref="WordPress-Extra"/>
+	<rule ref="WordPress-Docs"/>
+
+	<!-- Check for PHP cross-version compatibility -->
+	<rule ref="PHPCompatibilityWP"/>
+
+	<!-- Set target PHP version -->
+	<config name="testVersion" value="8.1-"/>
+
+	<!-- Set minimum WordPress version -->
+	<config name="minimum_supported_wp_version" value="6.0"/>
+
+	<!-- Verify that the text_domain is set correctly -->
+	<rule ref="WordPress.WP.I18n">
+		<properties>
+			<property name="text_domain" type="array">
+				<element value="wp-kagome-analyzer"/>
+			</property>
+		</properties>
+	</rule>
+
+	<!-- Verify that everything in the global namespace is properly prefixed -->
+	<rule ref="WordPress.NamingConventions.PrefixAllGlobals">
+		<properties>
+			<property name="prefixes" type="array">
+				<element value="wp_kagome"/>
+				<element value="WP_Kagome"/>
+				<element value="WP_KAGOME"/>
+			</property>
+		</properties>
+	</rule>
+
+	<rule ref="WordPress.WP.DeprecatedFunctions">
+		<properties>
+			<property name="minimum_supported_version" value="6.0"/>
+		</properties>
+	</rule>
+
+	<!-- Show progress -->
+	<arg value="p"/>
+
+	<!-- Show sniff codes in all reports -->
+	<arg value="s"/>
+
+	<!-- Use colors -->
+	<arg name="colors"/>
+
+	<!-- Check up to 20 files simultaneously -->
+	<arg name="parallel" value="20"/>
+
+	<!-- Only check PHP files -->
+	<arg name="extensions" value="php"/>
+</ruleset>

@@ -14,7 +14,12 @@
       "Bash(docker-compose build:*)",
       "Bash(docker-compose run:*)",
       "WebFetch(domain:github.com)",
-      "WebFetch(domain:zenn.dev)"
+      "WebFetch(domain:zenn.dev)",
+      "Bash(npm run update:*)",
+      "Bash(npm run cli:*)",
+      "Bash(/bin/rm:*)",
+      "Bash(sed:*)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }
