@@ -54,11 +54,13 @@ class Plugin extends Pattern\Singleton {
 		Rest\Tokenize::get_instance();
 		Rest\Status::get_instance();
 
+		// Initialize settings management
+		Settings::get_instance();
+
 		// Add admin menu if user has proper capabilities.
 		if ( is_admin() ) {
 			add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
-			add_action( 'admin_init', array( $this, 'admin_init' ) );
 		}
 	}
 
@@ -75,56 +77,6 @@ class Plugin extends Pattern\Singleton {
 		);
 	}
 
-	/**
-	 * Initialize admin settings.
-	 */
-	public function admin_init() {
-		// Register settings
-		register_setting(
-			'kagome_settings',
-			'kagome_user_dictionary',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_textarea_field',
-				'default'           => '',
-			)
-		);
-
-		register_setting(
-			'kagome_settings',
-			'kagome_binary_path',
-			array(
-				'type'              => 'string',
-				'sanitize_callback' => 'sanitize_text_field',
-				'default'           => '',
-			)
-		);
-
-		// Add settings section
-		add_settings_section(
-			'kagome_settings_section',
-			__( 'Kagome Settings', 'kagome' ),
-			array( $this, 'settings_section_callback' ),
-			'kagome-analyzer'
-		);
-
-		// Add settings fields
-		add_settings_field(
-			'kagome_user_dictionary',
-			__( 'User Dictionary', 'kagome' ),
-			array( $this, 'user_dictionary_callback' ),
-			'kagome-analyzer',
-			'kagome_settings_section'
-		);
-
-		add_settings_field(
-			'kagome_binary_path',
-			__( 'Kagome Binary Path', 'kagome' ),
-			array( $this, 'binary_path_callback' ),
-			'kagome-analyzer',
-			'kagome_settings_section'
-		);
-	}
 
 	/**
 	 * Enqueue admin scripts.
@@ -160,59 +112,6 @@ class Plugin extends Pattern\Singleton {
 		);
 	}
 
-	/**
-	 * Settings section callback.
-	 */
-	public function settings_section_callback() {
-		echo '<p>' . esc_html__( 'Configure Kagome analyzer settings below.', 'kagome' ) . '</p>';
-	}
-
-	/**
-	 * User dictionary field callback.
-	 */
-	public function user_dictionary_callback() {
-		$value = get_option( 'kagome_user_dictionary', '' );
-		?>
-		<textarea 
-			name="kagome_user_dictionary" 
-			id="kagome_user_dictionary" 
-			rows="10" 
-			cols="80" 
-			class="large-text code"
-			placeholder="<?php esc_attr_e( 'Enter user dictionary entries, one per line in format: surface,tokens,readings,part-of-speech', 'kagome' ); ?>"
-		><?php echo esc_textarea( $value ); ?></textarea>
-		<p class="description">
-			<?php esc_html_e( 'Format: surface,tokens,readings,part-of-speech (e.g., テスト単語,テスト 単語,テスト タンゴ,名詞)', 'kagome' ); ?>
-		</p>
-		<?php
-	}
-
-	/**
-	 * Binary path field callback.
-	 */
-	public function binary_path_callback() {
-		$value = get_option( 'kagome_binary_path', '' );
-		$current_path = $this->get_binary_path();
-		?>
-		<input 
-			type="text" 
-			name="kagome_binary_path" 
-			id="kagome_binary_path" 
-			value="<?php echo esc_attr( $value ); ?>" 
-			class="regular-text code"
-			placeholder="<?php echo esc_attr( $current_path ); ?>"
-		/>
-		<p class="description">
-			<?php 
-			printf(
-				/* translators: %s: current binary path */
-				esc_html__( 'Leave empty to use the default path: %s', 'kagome' ),
-				'<code>' . esc_html( $current_path ) . '</code>'
-			); 
-			?>
-		</p>
-		<?php
-	}
 
 	/**
 	 * Admin page content.
@@ -221,9 +120,9 @@ class Plugin extends Pattern\Singleton {
 		?>
 		<div class="wrap">
 			<h1><?php esc_html_e( 'Japanese Text Analysis', 'kagome' ); ?></h1>
-			
+
 			<?php settings_errors(); ?>
-			
+
 			<div id="poststuff">
 				<div id="post-body" class="metabox-holder columns-2">
 					<div id="post-body-content">
@@ -233,14 +132,16 @@ class Plugin extends Pattern\Singleton {
 							<div class="inside">
 								<form method="post" action="options.php">
 									<?php
-									settings_fields( 'kagome_settings' );
+									$settings = Settings::get_instance();
+									settings_fields( Settings::OPTION_GROUP );
+									$settings->add_settings_fields( 'kagome-analyzer' );
 									do_settings_sections( 'kagome-analyzer' );
 									submit_button();
 									?>
 								</form>
 							</div>
 						</div>
-						
+
 						<!-- Text Analysis Test -->
 						<div class="postbox">
 							<h2 class="hndle"><?php esc_html_e( 'Test Analysis', 'kagome' ); ?></h2>
@@ -251,10 +152,10 @@ class Plugin extends Pattern\Singleton {
 											<label for="test_text"><?php esc_html_e( 'Test Text', 'kagome' ); ?></label>
 										</th>
 										<td>
-											<textarea 
-												id="test_text" 
-												rows="3" 
-												cols="50" 
+											<textarea
+												id="test_text"
+												rows="3"
+												cols="50"
 												class="large-text"
 												placeholder="<?php esc_attr_e( 'Enter Japanese text to analyze...', 'kagome' ); ?>"
 											></textarea>
@@ -291,7 +192,7 @@ class Plugin extends Pattern\Singleton {
 							</div>
 						</div>
 					</div>
-					
+
 					<div id="postbox-container-1" class="postbox-container">
 						<div class="postbox">
 							<h2 class="hndle"><?php esc_html_e( 'Status', 'kagome' ); ?></h2>
@@ -302,7 +203,7 @@ class Plugin extends Pattern\Singleton {
 									<p><span class="dashicons dashicons-warning" style="color: orange;"></span> <?php esc_html_e( 'Kagome analyzer is not available', 'kagome' ); ?></p>
 								<?php endif; ?>
 								<p><strong><?php esc_html_e( 'Binary Path:', 'kagome' ); ?></strong><br>
-								<code><?php echo esc_html( $this->get_binary_path() ); ?></code></p>
+								<code><?php echo esc_html( Settings::get_instance()->get_binary_path() ); ?></code></p>
 							</div>
 						</div>
 					</div>
@@ -347,22 +248,6 @@ class Plugin extends Pattern\Singleton {
 	}
 
 	/**
-	 * Plugin activation.
-	 */
-	public function activate() {
-		// Add activation logic here if needed.
-		flush_rewrite_rules();
-	}
-
-	/**
-	 * Plugin deactivation.
-	 */
-	public function deactivate() {
-		// Add deactivation logic here if needed.
-		flush_rewrite_rules();
-	}
-
-	/**
 	 * Get analyzer instance.
 	 *
 	 * @return \Hametuha\Kagome\Analyzer|null
@@ -378,45 +263,7 @@ class Plugin extends Pattern\Singleton {
 	 * @return array
 	 */
 	public function get_analysis_options( $options = array() ) {
-		$default_options = array();
-
-		// Add user dictionary if configured
-		$user_dict = get_option( 'kagome_user_dictionary', '' );
-		if ( ! empty( $user_dict ) ) {
-			// Create temporary user dictionary file
-			$temp_dict_path = $this->create_temp_user_dict( $user_dict );
-			if ( $temp_dict_path ) {
-				$default_options['udict'] = $temp_dict_path;
-			}
-		}
-
-		return array_merge( $default_options, $options );
-	}
-
-	/**
-	 * Create temporary user dictionary file.
-	 *
-	 * @param string $dict_content Dictionary content.
-	 * @return string|false Temporary file path or false on failure.
-	 */
-	private function create_temp_user_dict( $dict_content ) {
-		$upload_dir = wp_upload_dir();
-		$temp_dir = $upload_dir['basedir'] . '/kagome-temp/';
-
-		if ( ! wp_mkdir_p( $temp_dir ) ) {
-			return false;
-		}
-
-		$temp_file = $temp_dir . 'user_dict_' . md5( $dict_content ) . '.txt';
-
-		// Only create if content has changed
-		if ( ! file_exists( $temp_file ) || md5_file( $temp_file ) !== md5( $dict_content ) ) {
-			if ( file_put_contents( $temp_file, $dict_content ) === false ) {
-				return false;
-			}
-		}
-
-		return $temp_file;
+		return Settings::get_instance()->get_analysis_options( $options );
 	}
 
 	/**
@@ -425,26 +272,6 @@ class Plugin extends Pattern\Singleton {
 	 * @return string|null
 	 */
 	private function get_binary_path() {
-		// Check if user has set a custom binary path
-		$custom_path = get_option( 'kagome_binary_path', '' );
-		if ( ! empty( $custom_path ) && file_exists( $custom_path ) ) {
-			return $custom_path;
-		}
-
-		$default_path = null;
-
-		// Check wp-env mapped directory first.
-		if ( defined( 'WP_CONTENT_DIR' ) && file_exists( WP_CONTENT_DIR . '/kagome/kagome-cli-linux' ) ) {
-			$default_path = WP_CONTENT_DIR . '/kagome/kagome-cli-linux';
-		}
-
-		/**
-		 * Filter the Kagome binary path.
-		 *
-		 * Allows users to specify custom binary locations.
-		 *
-		 * @param string|null $binary_path The path to the Kagome binary.
-		 */
-		return apply_filters( 'wp_kagome_binary_path', $default_path );
+		return Settings::get_instance()->get_binary_path();
 	}
 }

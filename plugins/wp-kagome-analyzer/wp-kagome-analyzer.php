@@ -38,11 +38,10 @@ if ( file_exists( $autoload_file ) ) {
 require_once WP_KAGOME_PATH . 'src/functions.php';
 
 // Initialize plugin on WordPress init.
-add_action( 'init', 'wp_kagome_init_plugin' );
-add_action( 'rest_api_init', 'wp_kagome_init_rest_api' );
+add_action( 'plugins_loaded', 'wp_kagome_init_plugin' );
 
 // Register activation and deactivation hooks.
-register_activation_hook( __FILE__, 'wp_kagome_activate_plugin' );
+register_activation_hook( __FILE__, 'wp_kagome_activate' );
 register_deactivation_hook( __FILE__, 'wp_kagome_deactivate_plugin' );
 
 /**
@@ -54,25 +53,20 @@ function wp_kagome_init_plugin() {
 }
 
 /**
- * Initialize REST API.
+ * Executed if this plugin is activated.
+ *
+ * @return void
  */
-function wp_kagome_init_rest_api() {
-	// REST API endpoints are now initialized automatically via Plugin::init()
-	// No manual initialization needed.
-}
-
-/**
- * Plugin activation callback.
- */
-function wp_kagome_activate_plugin() {
-	$plugin = wp_kagome_analyzer();
-	$plugin->activate();
+function wp_kagome_activate() {
+	flush_rewrite_rules();
 }
 
 /**
  * Plugin deactivation callback.
+ *
+ * @return void
  */
 function wp_kagome_deactivate_plugin() {
-	$plugin = wp_kagome_analyzer();
-	$plugin->deactivate();
+	flush_rewrite_rules();
+	// TODO: IF cron exists, remove them.
 }

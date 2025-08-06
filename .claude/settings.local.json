@@ -19,7 +19,10 @@
       "Bash(npm run cli:*)",
       "Bash(/bin/rm:*)",
       "Bash(sed:*)",
-      "Bash(grep:*)"
+      "Bash(grep:*)",
+      "Bash(npx wp-env run cli wp kagome:*)",
+      "Bash(npx wp-env run cli wp option get:*)",
+      "Bash(npx wp-env run cli wp option:*)"
     ],
     "deny": []
   }

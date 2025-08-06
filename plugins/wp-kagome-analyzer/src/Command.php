@@ -74,6 +74,10 @@ class Command extends \WP_CLI_Command {
 			$options['mode'] = $assoc_args['mode'];
 		}
 
+		// Get plugin instance and merge with user dictionary options
+		$plugin = Plugin::get_instance();
+		$options = $plugin->get_analysis_options( $options );
+
 		try {
 			// Simple mode - just show segmented words.
 			if ( isset( $assoc_args['simple'] ) ) {
@@ -94,11 +98,26 @@ class Command extends \WP_CLI_Command {
 			} elseif ( 'table' === $format ) {
 				$items = array();
 				foreach ( $result as $token ) {
+					// For user dictionary entries, extract reading from features
+					$reading = $token['reading'] ?? '';
+					$base = $token['base_form'] ?? '';
+					
+					if ( isset( $token['class'] ) && 'USER' === $token['class'] && isset( $token['features'] ) ) {
+						// User dictionary entries have reading in features[2]
+						if ( empty( $reading ) && isset( $token['features'][2] ) ) {
+							$reading = $token['features'][2];
+						}
+						// User dictionary entries typically use surface as base form
+						if ( empty( $base ) ) {
+							$base = $token['surface'];
+						}
+					}
+					
 					$items[] = array(
 						'surface' => $token['surface'],
 						'pos'     => $token['pos'][0] ?? '',
-						'reading' => $token['reading'] ?? '',
-						'base'    => $token['base_form'] ?? '',
+						'reading' => $reading,
+						'base'    => $base,
 					);
 				}
 				\WP_CLI\Utils\format_items( $format, $items, array( 'surface', 'pos', 'reading', 'base' ) );
@@ -112,6 +131,125 @@ class Command extends \WP_CLI_Command {
 	}
 
 	/**
+	 * Display user dictionary information and entries.
+	 *
+	 * ## OPTIONS
+	 *
+	 * [--format=<format>]
+	 * : Output format.
+	 * ---
+	 * default: table
+	 * options:
+	 *   - table
+	 *   - json
+	 *   - csv
+	 *   - yaml
+	 * ---
+	 *
+	 * [--test=<text>]
+	 * : Test text analysis with user dictionary.
+	 *
+	 * ## EXAMPLES
+	 *
+	 *     # Show user dictionary entries
+	 *     $ wp kagome user-dic
+	 *
+	 *     # Show in JSON format
+	 *     $ wp kagome user-dic --format=json
+	 *
+	 *     # Test analysis with user dictionary
+	 *     $ wp kagome user-dic --test="カスタム語を含むテスト文"
+	 *
+	 * @subcommand user-dic
+	 * @synopsis [--format=<format>] [--test=<text>]
+	 * @when after_wp_load
+	 */
+	public function user_dic( $args, $assoc_args ) {
+		$settings = Settings::get_instance();
+		$user_dict_content = $settings->get_user_dictionary_content();
+		$entries = $settings->get_user_dictionary_entries();
+
+		\WP_CLI::line( 'User Dictionary Information:' );
+		\WP_CLI::line( '----------------------------' );
+
+		if ( $settings->is_user_dictionary_enabled() ) {
+			\WP_CLI::success( 'User dictionary is configured' );
+		} else {
+			\WP_CLI::warning( 'User dictionary is empty' );
+		}
+
+		\WP_CLI::line( 'Total entries: ' . count( $entries ) );
+
+		if ( empty( $entries ) ) {
+			if ( ! empty( $user_dict_content ) ) {
+				\WP_CLI::warning( 'User dictionary content found but no valid entries parsed' );
+				\WP_CLI::line( 'Raw content:' );
+				\WP_CLI::line( $user_dict_content );
+			} else {
+				\WP_CLI::warning( 'No user dictionary entries found' );
+			}
+			return;
+		}
+
+		// Show entries.
+		$format = isset( $assoc_args['format'] ) ? $assoc_args['format'] : 'table';
+
+		if ( 'json' === $format ) {
+			\WP_CLI::line( wp_json_encode( $entries, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE ) );
+		} else {
+			\WP_CLI\Utils\format_items( $format, $entries, array( 'surface', 'tokens', 'reading', 'pos' ) );
+		}
+
+		// Test analysis if requested.
+		if ( isset( $assoc_args['test'] ) ) {
+			$test_text = $assoc_args['test'];
+			\WP_CLI::line( '' );
+			\WP_CLI::line( 'Testing analysis with user dictionary:' );
+			\WP_CLI::line( 'Text: ' . $test_text );
+			\WP_CLI::line( '---' );
+
+			$analyzer = $this->get_analyzer();
+			if ( ! $analyzer ) {
+				\WP_CLI::error( 'Analyzer not available' );
+			}
+
+			try {
+				// Get plugin options including user dictionary
+				$plugin = Plugin::get_instance();
+				$options = $plugin->get_analysis_options();
+				$result = $analyzer->analyze( $test_text, $options );
+				$items = array();
+				foreach ( $result as $token ) {
+					// For user dictionary entries, extract reading from features
+					$reading = $token['reading'] ?? '';
+					$base = $token['base_form'] ?? '';
+					
+					if ( isset( $token['class'] ) && 'USER' === $token['class'] && isset( $token['features'] ) ) {
+						// User dictionary entries have reading in features[2]
+						if ( empty( $reading ) && isset( $token['features'][2] ) ) {
+							$reading = $token['features'][2];
+						}
+						// User dictionary entries typically use surface as base form
+						if ( empty( $base ) ) {
+							$base = $token['surface'];
+						}
+					}
+					
+					$items[] = array(
+						'surface' => $token['surface'],
+						'pos'     => $token['pos'][0] ?? '',
+						'reading' => $reading,
+						'base'    => $base,
+					);
+				}
+				\WP_CLI\Utils\format_items( 'table', $items, array( 'surface', 'pos', 'reading', 'base' ) );
+			} catch ( \Exception $e ) {
+				\WP_CLI::error( 'Analysis failed: ' . $e->getMessage() );
+			}
+		}
+	}
+
+	/**
 	 * Show Kagome binary information.
 	 *
 	 * ## EXAMPLES
@@ -121,7 +259,7 @@ class Command extends \WP_CLI_Command {
 	 * @when after_wp_load
 	 */
 	public function info() {
-		$binary_path = $this->get_binary_path();
+		$binary_path = Settings::get_instance()->get_binary_path();
 
 		\WP_CLI::line( 'Kagome Analyzer Information:' );
 		\WP_CLI::line( '----------------------------' );
@@ -163,24 +301,4 @@ class Command extends \WP_CLI_Command {
 		return $plugin->get_analyzer();
 	}
 
-	/**
-	 * Get binary path with filter support.
-	 *
-	 * @return string|null
-	 */
-	private function get_binary_path() {
-		$default_path = null;
-
-		// Check wp-env mapped directory first.
-		if ( defined( 'WP_CONTENT_DIR' ) && file_exists( WP_CONTENT_DIR . '/kagome/kagome-cli-linux' ) ) {
-			$default_path = WP_CONTENT_DIR . '/kagome/kagome-cli-linux';
-		}
-
-		/**
-		 * Filter the Kagome binary path.
-		 *
-		 * @param string|null $binary_path The path to the Kagome binary.
-		 */
-		return apply_filters( 'wp_kagome_binary_path', $default_path );
-	}
 }
