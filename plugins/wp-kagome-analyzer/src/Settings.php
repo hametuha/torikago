@@ -28,6 +28,16 @@ class Settings extends Pattern\Singleton {
 	const BINARY_PATH_OPTION = 'kagome_binary_path';
 
 	/**
+	 * Included post types option name.
+	 */
+	const INCLUDED_POST_TYPES_OPTION = 'kagome_included_post_types';
+
+	/**
+	 * Excluded post types option name.
+	 */
+	const EXCLUDED_POST_TYPES_OPTION = 'kagome_excluded_post_types';
+
+	/**
 	 * Initialize settings.
 	 */
 	protected function init(): void {
@@ -60,6 +70,26 @@ class Settings extends Pattern\Singleton {
 				'default'           => '',
 			)
 		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::INCLUDED_POST_TYPES_OPTION,
+			array(
+				'type'              => 'array',
+				'sanitize_callback' => array( $this, 'sanitize_post_types' ),
+				'default'           => array(),
+			)
+		);
+
+		register_setting(
+			self::OPTION_GROUP,
+			self::EXCLUDED_POST_TYPES_OPTION,
+			array(
+				'type'              => 'array',
+				'sanitize_callback' => array( $this, 'sanitize_post_types' ),
+				'default'           => array(),
+			)
+		);
 	}
 
 	/**
@@ -89,6 +119,14 @@ class Settings extends Pattern\Singleton {
 			self::BINARY_PATH_OPTION,
 			__( 'Kagome Binary Path', 'kagome' ),
 			array( $this, 'binary_path_callback' ),
+			$page_slug,
+			'kagome_settings_section'
+		);
+
+		add_settings_field(
+			'kagome_post_types',
+			__( 'Indexable Post Types', 'kagome' ),
+			array( $this, 'post_types_callback' ),
 			$page_slug,
 			'kagome_settings_section'
 		);
@@ -295,5 +333,101 @@ class Settings extends Pattern\Singleton {
 		}
 
 		return array_merge( $default_options, $options );
+	}
+
+	/**
+	 * Post types field callback.
+	 */
+	public function post_types_callback() {
+		$all_post_types = get_post_types( array( 'public' => true ), 'objects' );
+		$default_types = wp_kagome_indexable_post_types( false );
+		$included_types = $this->get_included_post_types();
+		$excluded_types = $this->get_excluded_post_types();
+		?>
+		<div class="kagome-post-types-settings">
+			<div style="margin-bottom: 20px;">
+				<h4><?php esc_html_e( 'Default Indexable Post Types:', 'kagome' ); ?></h4>
+				<p class="description">
+					<?php echo esc_html( implode( ', ', $default_types ) ); ?>
+				</p>
+			</div>
+
+			<div style="display: flex; gap: 30px;">
+				<div style="flex: 1;">
+					<h4><?php esc_html_e( 'Force Include:', 'kagome' ); ?></h4>
+					<p class="description"><?php esc_html_e( 'Check to always include these post types', 'kagome' ); ?></p>
+					<?php foreach ( $all_post_types as $post_type ) : ?>
+						<?php if ( ! in_array( $post_type->name, $default_types, true ) ) : ?>
+							<label style="display: block; margin: 5px 0;">
+								<input type="checkbox" 
+									   name="<?php echo esc_attr( self::INCLUDED_POST_TYPES_OPTION ); ?>[]" 
+									   value="<?php echo esc_attr( $post_type->name ); ?>"
+									   <?php checked( in_array( $post_type->name, $included_types, true ) ); ?> />
+								<?php echo esc_html( $post_type->label ); ?> (<?php echo esc_html( $post_type->name ); ?>)
+							</label>
+						<?php endif; ?>
+					<?php endforeach; ?>
+				</div>
+
+				<div style="flex: 1;">
+					<h4><?php esc_html_e( 'Force Exclude:', 'kagome' ); ?></h4>
+					<p class="description"><?php esc_html_e( 'Check to always exclude these post types', 'kagome' ); ?></p>
+					<?php foreach ( $all_post_types as $post_type ) : ?>
+						<?php if ( in_array( $post_type->name, $default_types, true ) ) : ?>
+							<label style="display: block; margin: 5px 0;">
+								<input type="checkbox" 
+									   name="<?php echo esc_attr( self::EXCLUDED_POST_TYPES_OPTION ); ?>[]" 
+									   value="<?php echo esc_attr( $post_type->name ); ?>"
+									   <?php checked( in_array( $post_type->name, $excluded_types, true ) ); ?> />
+								<?php echo esc_html( $post_type->label ); ?> (<?php echo esc_html( $post_type->name ); ?>)
+							</label>
+						<?php endif; ?>
+					<?php endforeach; ?>
+				</div>
+			</div>
+		</div>
+		<?php
+	}
+
+	/**
+	 * Sanitize post types array.
+	 *
+	 * @param mixed $value Input value.
+	 * @return array Sanitized array.
+	 */
+	public function sanitize_post_types( $value ) {
+		if ( ! is_array( $value ) ) {
+			return array();
+		}
+
+		// Validate each post type exists
+		$valid_types = array();
+		$all_types = get_post_types();
+
+		foreach ( $value as $post_type ) {
+			if ( in_array( $post_type, $all_types, true ) ) {
+				$valid_types[] = $post_type;
+			}
+		}
+
+		return $valid_types;
+	}
+
+	/**
+	 * Get included post types.
+	 *
+	 * @return array Array of post type names to include.
+	 */
+	public function get_included_post_types() {
+		return get_option( self::INCLUDED_POST_TYPES_OPTION, array() );
+	}
+
+	/**
+	 * Get excluded post types.
+	 *
+	 * @return array Array of post type names to exclude.
+	 */
+	public function get_excluded_post_types() {
+		return get_option( self::EXCLUDED_POST_TYPES_OPTION, array() );
 	}
 }

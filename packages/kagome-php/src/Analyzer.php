@@ -163,10 +163,48 @@ class Analyzer
         $result = json_decode($output, true);
 
         if ($result === null && json_last_error() !== JSON_ERROR_NONE) {
+            // Log the problematic output for debugging
+            error_log('Kagome raw output (first 200 chars): ' . substr($output, 0, 200));
+            error_log('JSON error: ' . json_last_error_msg());
+            error_log('Text length: ' . strlen($text) . ', Output length: ' . strlen($output));
+            
+            // Try to handle common JSON issues
+            $cleaned_output = $this->cleanJsonOutput($output);
+            if ($cleaned_output !== $output) {
+                $result = json_decode($cleaned_output, true);
+                if ($result !== null) {
+                    error_log('Kagome: Successfully parsed after cleanup');
+                    return $result;
+                }
+            }
+            
             throw new \RuntimeException('Failed to parse kagome output: ' . json_last_error_msg());
         }
 
         return $result;
+    }
+
+    /**
+     * Clean JSON output to handle common formatting issues.
+     *
+     * @param string $output Raw output from kagome
+     * @return string Cleaned output
+     */
+    private function cleanJsonOutput(string $output): string
+    {
+        // Remove any BOM or leading whitespace
+        $cleaned = ltrim($output, "\xEF\xBB\xBF");
+        $cleaned = trim($cleaned);
+        
+        // Remove trailing commas in JSON arrays/objects
+        $cleaned = preg_replace('/,(\s*[}\]])/', '$1', $cleaned);
+        
+        // Fix incomplete JSON arrays (add closing bracket if missing)
+        if (substr($cleaned, -1) !== ']' && strpos($cleaned, '[') === 0) {
+            $cleaned .= ']';
+        }
+        
+        return $cleaned;
     }
 
     /**

@@ -58,6 +58,8 @@ function wp_kagome_init_plugin() {
  * @return void
  */
 function wp_kagome_activate() {
+	// Trigger activation hook for components that need it
+	do_action( 'wp_kagome_activate' );
 	flush_rewrite_rules();
 }
 
