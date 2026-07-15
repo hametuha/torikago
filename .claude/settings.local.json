@@ -22,7 +22,17 @@
       "Bash(grep:*)",
       "Bash(npx wp-env run cli wp kagome:*)",
       "Bash(npx wp-env run cli wp option get:*)",
-      "Bash(npx wp-env run cli wp option:*)"
+      "Bash(npx wp-env run cli wp option:*)",
+      "Bash(gh issue view:*)",
+      "Bash(npx wp-env run cli wp post create:*)",
+      "Bash(npx wp-env run cli wp db query:*)",
+      "Bash(find:*)",
+      "Bash(npx wp-env run cli wp post list:*)",
+      "Bash(npx wp-env run cli wp eval:*)",
+      "Bash(npx wp-env run cli wp log:*)",
+      "Bash(npx wp-env run cli cat:*)",
+      "Bash(npx wp-env run cli grep:*)",
+      "Bash(npx wp-env run cli wp post get:*)"
     ],
     "deny": []
   }

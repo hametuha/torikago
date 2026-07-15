@@ -1,50 +1,67 @@
-# PHP Kagome Integration
+# Kagome Analyzer (WordPress plugin)
 
-This project integrates the Golang-based morphological analyzer `kagome` with PHP via a Composer library and optionally a WordPress plugin.
+Japanese morphological analysis for WordPress, powered by the Go-based
+[kagome](https://github.com/ikawaha/kagome) analyzer. The kagome binary is
+bundled with the plugin and invoked from PHP via `proc_open`.
 
-## 📦 Project Structure
+> This was originally split into a Composer library + WordPress plugin for
+> general distribution. It is now a single, self-contained plugin for internal
+> (Hametuha) use, so the library layer has been folded into the plugin.
+
+## 📦 Project structure
 
 ```
 php-kagome/
-├── packages/
-│   └── kagome-php/          # Composer library wrapping kagome CLI
-├── plugins/
-│   └── wp-kagome-analyzer/  # (Optional) WordPress plugin using the library
 ├── bin/
-
-│   └── kagome-cli           # kagome binary (must be built separately)
-└── composer.json            # Root composer for monorepo
+│   └── build.sh                     # Cross-compiles the kagome binaries into the plugin
+└── plugins/
+    └── wp-kagome-analyzer/          # The plugin (this is the deployable artifact)
+        ├── resources/kagome/        # Bundled kagome binaries (per OS/arch)
+        │   ├── kagome-linux-amd64
+        │   ├── kagome-linux-arm64
+        │   └── kagome-darwin-arm64
+        ├── src/
+        │   ├── Analyzer.php          # WP-independent kagome wrapper (PSR-12)
+        │   └── ...                   # WordPress integration (REST, CLI, settings)
+        └── tests/                    # Pure-PHP integration tests for Analyzer
 ```
 
-## 🛠️ Setup Instructions
+The binary for the current OS/architecture is selected at runtime by
+`Analyzer::detectBinaryPath()` (`PHP_OS_FAMILY` × `php_uname('m')`), so the same
+plugin runs on both x86_64 and arm64 (e.g. Intel and Graviton EC2).
 
-1. **Build kagome CLI** (on Linux or WSL):
-   ```sh
-   git clone https://github.com/ikawaha/kagome.git
-   cd kagome/cmd/kagome
-   GOOS=linux GOARCH=amd64 go build -o kagome-cli
-   cp kagome-cli /path/to/php-kagome/bin/
-   ```
+## 🛠️ Development
 
-2. **Install dependencies**:
-   From the project root:
-   ```sh
-   composer install
-   ```
+Build/refresh the bundled binaries (needs Go; kagome is pure Go so this
+cross-compiles without a C toolchain):
 
-3. **Use Analyzer class**:
-   Example PHP code:
-   ```php
-   use Hametuha\Kagome\Analyzer;
+```sh
+bin/build.sh                          # builds linux/amd64, linux/arm64, darwin/arm64
+KAGOME_VERSION=v2.11.0 bin/build.sh   # pin a kagome version
+```
 
-   $analyzer = new Analyzer(__DIR__ . '/bin/kagome-cli');
-   $result = $analyzer->analyze('今日はいい天気ですね。');
-   print_r($result);
-   ```
+Install PHP dependencies and run checks from the plugin directory:
 
-## ✅ Next Steps
+```sh
+cd plugins/wp-kagome-analyzer
+composer install
+composer test                    # PHPUnit: exercises the real bundled binary
+composer phpcs                   # WPCS (Analyzer.php is excluded; kept PSR-12)
+```
 
-- [ ] Add test suite
-- [ ] Add plugin boilerplate under `plugins/`
-- [ ] Optionally support automatic binary download if not found
-- [ ] Improve error handling/logging
+Local WordPress via [`wp-env`](https://developer.wordpress.org/block-editor/reference-guides/packages/packages-env/):
+
+```sh
+cd plugins/wp-kagome-analyzer
+npm install && npm run env -- start
+```
+
+## 🚀 Deployment notes
+
+- Deploying the plugin must include `composer install --no-dev` (the plugin
+  relies on Composer's autoloader for its own classes).
+- Installing from a ZIP upload strips the executable bit from the bundled
+  binary; the plugin restores it on activation (`chmod 0755`), with a fallback
+  attempt in `Analyzer`'s constructor. Hosts that forbid `chmod` will surface an
+  admin notice.
+- `exec`/`proc_open` must not be disabled via `disable_functions`.

@@ -17,7 +17,7 @@ class Plugin extends Pattern\Singleton {
 	/**
 	 * Kagome analyzer instance.
 	 *
-	 * @var \Hametuha\Kagome\Analyzer
+	 * @var \Hametuha\KagomeWp\Analyzer
 	 */
 	private $analyzer = null;
 
@@ -32,11 +32,14 @@ class Plugin extends Pattern\Singleton {
 			dirname( WP_KAGOME_BASENAME ) . '/languages'
 		);
 
-		// Initialize Kagome analyzer if available.
-		if ( class_exists( '\Hametuha\Kagome\Analyzer' ) ) {
+		// Initialize Kagome analyzer. The class is bundled with the plugin, so the
+		// class_exists guard mainly protects against a broken autoloader; the
+		// try/catch is what matters (Analyzer throws when the binary is missing or
+		// not executable).
+		if ( class_exists( '\Hametuha\KagomeWp\Analyzer' ) ) {
 			try {
 				$binary_path = $this->get_binary_path();
-				$this->analyzer = new \Hametuha\Kagome\Analyzer( $binary_path );
+				$this->analyzer = new \Hametuha\KagomeWp\Analyzer( $binary_path );
 			} catch ( \Exception $e ) {
 				add_action( 'admin_notices', array( $this, 'show_kagome_error' ) );
 			}
@@ -53,15 +56,26 @@ class Plugin extends Pattern\Singleton {
 		Rest\Analyze::get_instance();
 		Rest\Tokenize::get_instance();
 		Rest\Status::get_instance();
+		Rest\Performance::get_instance();
 
 		// Initialize settings management
 		Settings::get_instance();
+
+		// Initialize search index table
+		Model\SearchIndex::get_instance();
+
+		// Initialize search query optimizer
+		Search\QueryOptimizer::get_instance();
 
 		// Add admin menu if user has proper capabilities.
 		if ( is_admin() ) {
 			add_action( 'admin_menu', array( $this, 'add_admin_menu' ) );
 			add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_admin_scripts' ) );
 		}
+
+		// Hook for post save to update search index
+		add_action( 'save_post', array( $this, 'update_search_index' ), 10, 2 );
+		add_action( 'delete_post', array( $this, 'delete_search_index' ) );
 	}
 
 	/**
@@ -142,9 +156,55 @@ class Plugin extends Pattern\Singleton {
 							</div>
 						</div>
 
+						<!-- Search Performance Test -->
+						<div class="postbox">
+							<h2 class="hndle"><?php esc_html_e( 'Search Performance Test', 'kagome' ); ?></h2>
+							<div class="inside">
+								<table class="form-table">
+									<tr>
+										<th scope="row">
+											<label for="performance_search_term"><?php esc_html_e( 'Search Term', 'kagome' ); ?></label>
+										</th>
+										<td>
+											<input 
+												type="text" 
+												id="performance_search_term" 
+												class="regular-text"
+												placeholder="<?php esc_attr_e( 'Enter Japanese text to search...', 'kagome' ); ?>"
+												value="破滅派" />
+										</td>
+									</tr>
+									<tr>
+										<th scope="row">
+											<label for="performance_limit"><?php esc_html_e( 'Result Limit', 'kagome' ); ?></label>
+										</th>
+										<td>
+											<select id="performance_limit">
+												<option value="10">10</option>
+												<option value="50" selected>50</option>
+												<option value="100">100</option>
+											</select>
+										</td>
+									</tr>
+								</table>
+								<p class="submit">
+									<button type="button" id="run_performance_test" class="button button-primary">
+										<?php esc_html_e( 'Run Performance Test', 'kagome' ); ?>
+									</button>
+								</p>
+								<div id="performance_results" style="display: none;">
+									<h3><?php esc_html_e( 'Performance Results', 'kagome' ); ?></h3>
+									<div id="performance_output"></div>
+								</div>
+								<div id="performance_loading" style="display: none;">
+									<p><?php esc_html_e( 'Running performance tests...', 'kagome' ); ?></p>
+								</div>
+							</div>
+						</div>
+
 						<!-- Text Analysis Test -->
 						<div class="postbox">
-							<h2 class="hndle"><?php esc_html_e( 'Test Analysis', 'kagome' ); ?></h2>
+							<h2 class="hndle"><?php esc_html_e( 'Text Analysis Test', 'kagome' ); ?></h2>
 							<div class="inside">
 								<table class="form-table">
 									<tr>
@@ -250,7 +310,7 @@ class Plugin extends Pattern\Singleton {
 	/**
 	 * Get analyzer instance.
 	 *
-	 * @return \Hametuha\Kagome\Analyzer|null
+	 * @return \Hametuha\KagomeWp\Analyzer|null
 	 */
 	public function get_analyzer() {
 		return $this->analyzer;
@@ -274,4 +334,44 @@ class Plugin extends Pattern\Singleton {
 	private function get_binary_path() {
 		return Settings::get_instance()->get_binary_path();
 	}
+
+	/**
+	 * Update search index when post is saved.
+	 *
+	 * @param int      $post_id Post ID.
+	 * @param \WP_Post $post    Post object.
+	 */
+	public function update_search_index( $post_id, $post ) {
+		// Skip auto-saves and revisions.
+		if ( wp_is_post_autosave( $post_id ) || wp_is_post_revision( $post_id ) ) {
+			return;
+		}
+
+		// Skip if post status is not published.
+		if ( 'publish' !== $post->post_status ) {
+			return;
+		}
+
+		// Check if post type is indexable
+		$indexable_types = wp_kagome_indexable_post_types();
+		if ( ! in_array( $post->post_type, $indexable_types, true ) ) {
+			return;
+		}
+
+		// Update search index.
+		$search_index = Model\SearchIndex::get_instance();
+		$search_index->update_index( $post_id );
+	}
+
+	/**
+	 * Delete search index when post is deleted.
+	 *
+	 * @param int $post_id Post ID.
+	 */
+	public function delete_search_index( $post_id ) {
+		$search_index = Model\SearchIndex::get_instance();
+		$search_index->delete_index( $post_id );
+	}
+
+
 }

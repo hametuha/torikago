@@ -58,6 +58,26 @@ function wp_kagome_init_plugin() {
  * @return void
  */
 function wp_kagome_activate() {
+	// Restore the executable bit on the bundled kagome binary. Installing a plugin
+	// from a ZIP upload strips the exec bit, which would make proc_open() fail on
+	// EC2 and elsewhere. Best-effort: some hosts disallow chmod, in which case the
+	// admin notice from Analyzer's constructor still surfaces the problem.
+	if ( class_exists( '\Hametuha\KagomeWp\Analyzer' ) ) {
+		try {
+			$binary_path = \Hametuha\KagomeWp\Analyzer::detectBinaryPath();
+			if ( file_exists( $binary_path ) && ! is_executable( $binary_path ) ) {
+				// Direct chmod is intentional: WP_Filesystem's FTP/SSH transports do
+				// not reliably set the exec bit on a local file, and we need it here.
+				@chmod( $binary_path, 0755 ); // phpcs:ignore WordPress.PHP.NoSilencedErrors.Discouraged, WordPress.WP.AlternativeFunctions.file_system_operations_chmod
+			}
+		} catch ( \RuntimeException $e ) {
+			// Unsupported OS/architecture: nothing to chmod.
+			unset( $e );
+		}
+	}
+
+	// Trigger activation hook for components that need it
+	do_action( 'wp_kagome_activate' );
 	flush_rewrite_rules();
 }
 
