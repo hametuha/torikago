@@ -31,5 +31,5 @@
 *.zip binary
 *.tar.gz binary
 
-# Go binaries (for kagome) — bundled inside the plugin, shipped in distribution.
-plugins/wp-kagome-analyzer/resources/kagome/* binary
+# Go binaries (for kagome) — build artifacts, normally gitignored.
+resources/kagome/* binary

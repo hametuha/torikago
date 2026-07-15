@@ -1,0 +1,22 @@
+# Files excluded from the distribution ZIP (repo root = plugin).
+# vendor/ is intentionally NOT excluded — the plugin needs Composer's autoloader.
+.git
+.github
+.idea
+.claude
+bin
+tests
+node_modules
+wp
+tmp
+.wp-env.json
+phpunit.xml.dist
+phpcs.xml
+package.json
+package-lock.json
+composer.lock
+.gitignore
+.gitattributes
+.distignore
+.phpunit.result.cache
+resources/kagome/kagome-darwin-arm64

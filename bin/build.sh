@@ -14,7 +14,7 @@
 set -euo pipefail
 
 BASE_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-OUT_DIR="$BASE_DIR/plugins/wp-kagome-analyzer/resources/kagome"
+OUT_DIR="$BASE_DIR/resources/kagome"
 
 KAGOME_PKG="github.com/ikawaha/kagome/v2"
 KAGOME_VERSION="${KAGOME_VERSION:-latest}"
