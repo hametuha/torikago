@@ -20,3 +20,11 @@ composer.lock
 .distignore
 .phpunit.result.cache
 resources/kagome/kagome-darwin-arm64
+
+# Local dev / editor / OS cruft (defense-in-depth: the CI ZIP is built from a
+# clean checkout, but guard against local packaging leaking these).
+.wp-env/
+.vscode/
+*.log
+.DS_Store
+Thumbs.db
