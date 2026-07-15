@@ -38,11 +38,9 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install dependencies
-        working-directory: plugins/wp-kagome-analyzer
         run: composer install --no-progress
 
       - name: PHPUnit
-        working-directory: plugins/wp-kagome-analyzer
         run: composer test
 
   status:

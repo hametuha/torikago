@@ -34,24 +34,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install runtime dependencies
-        working-directory: plugins/wp-kagome-analyzer
         run: composer install --no-dev --optimize-autoloader --no-progress
 
+      # Stage the repo root (= the plugin) into a folder named after the plugin
+      # slug so the ZIP installs as wp-content/plugins/wp-kagome-analyzer/.
+      # Dev-only files are excluded via .distignore (plus .git, always).
       - name: Stage and zip plugin
         run: |
           STAGE="${RUNNER_TEMP}/wp-kagome-analyzer"
           rsync -a \
-            --exclude='.git*' \
-            --exclude='node_modules' \
-            --exclude='tests' \
-            --exclude='phpunit.xml.dist' \
-            --exclude='phpcs.xml' \
-            --exclude='.wp-env.json' \
-            --exclude='package.json' \
-            --exclude='package-lock.json' \
-            --exclude='.phpunit.result.cache' \
-            --exclude='resources/kagome/kagome-darwin-*' \
-            plugins/wp-kagome-analyzer/ "${STAGE}/"
+            --exclude='.git' \
+            --exclude-from='.distignore' \
+            ./ "${STAGE}/"
           ( cd "${RUNNER_TEMP}" && zip -r -q "${GITHUB_WORKSPACE}/wp-kagome-analyzer.zip" wp-kagome-analyzer )
 
       # Fail loudly if the Linux binaries did not make it into the package.
