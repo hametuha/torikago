@@ -1,15 +1,20 @@
 <?php
 
-namespace Hametuha\Kagome\Tests;
+namespace Hametuha\KagomeWp\Tests;
 
-use Hametuha\Kagome\Analyzer;
+use Hametuha\KagomeWp\Analyzer;
 use PHPUnit\Framework\TestCase;
 
 /**
- * Test suite for the Kagome Analyzer class
+ * Test suite for the Kagome Analyzer class.
  *
- * @package Hametuha\Kagome\Tests
- * @covers \Hametuha\Kagome\Analyzer
+ * This is a pure-PHP integration test: it exercises the real bundled kagome
+ * binary via proc_open and does NOT require a WordPress bootstrap. The binary
+ * for the current OS/architecture must exist under resources/kagome/ and be
+ * executable (run bin/build.sh first).
+ *
+ * @package Hametuha\KagomeWp\Tests
+ * @covers \Hametuha\KagomeWp\Analyzer
  */
 class AnalyzerTest extends TestCase
 {

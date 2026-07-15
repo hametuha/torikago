@@ -10,9 +10,5 @@
     "WP_DEBUG_LOG": true,
     "WP_DEBUG_DISPLAY": false,
     "SCRIPT_DEBUG": true
-  },
-  "mappings": {
-    "wp-content/kagome": "../../bin/kagome-binary",
-    "wp-content/plugins/wp-kagome-analyzer/vendor/kagome/kagome-php": "../../packages/kagome-php"
   }
 }

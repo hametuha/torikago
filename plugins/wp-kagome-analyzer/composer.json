@@ -11,18 +11,8 @@
         }
     ],
     "require": {
-        "php": ">=8.1",
-        "hametuha/kagome-php": "@dev"
+        "php": ">=8.1"
     },
-    "repositories": [
-        {
-            "type": "path",
-            "url": "../../packages/kagome-php",
-            "options": {
-                "symlink": false
-            }
-        }
-    ],
     "require-dev": {
         "dealerdirect/phpcodesniffer-composer-installer": "^1.0",
         "wp-coding-standards/wpcs": "^3.0",

@@ -674,7 +674,7 @@ class Command extends \WP_CLI_Command {
 	/**
 	 * Get analyzer instance.
 	 *
-	 * @return \Hametuha\Kagome\Analyzer|null
+	 * @return \Hametuha\KagomeWp\Analyzer|null
 	 */
 	private function get_analyzer() {
 		$plugin = Plugin::get_instance();

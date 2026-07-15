@@ -32,3 +32,4 @@ composer.lock
 # Testing
 /tests/wp-tests-config.php
 /tmp/
+.phpunit.result.cache

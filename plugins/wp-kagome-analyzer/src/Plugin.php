@@ -17,7 +17,7 @@ class Plugin extends Pattern\Singleton {
 	/**
 	 * Kagome analyzer instance.
 	 *
-	 * @var \Hametuha\Kagome\Analyzer
+	 * @var \Hametuha\KagomeWp\Analyzer
 	 */
 	private $analyzer = null;
 
@@ -32,11 +32,14 @@ class Plugin extends Pattern\Singleton {
 			dirname( WP_KAGOME_BASENAME ) . '/languages'
 		);
 
-		// Initialize Kagome analyzer if available.
-		if ( class_exists( '\Hametuha\Kagome\Analyzer' ) ) {
+		// Initialize Kagome analyzer. The class is bundled with the plugin, so the
+		// class_exists guard mainly protects against a broken autoloader; the
+		// try/catch is what matters (Analyzer throws when the binary is missing or
+		// not executable).
+		if ( class_exists( '\Hametuha\KagomeWp\Analyzer' ) ) {
 			try {
 				$binary_path = $this->get_binary_path();
-				$this->analyzer = new \Hametuha\Kagome\Analyzer( $binary_path );
+				$this->analyzer = new \Hametuha\KagomeWp\Analyzer( $binary_path );
 			} catch ( \Exception $e ) {
 				add_action( 'admin_notices', array( $this, 'show_kagome_error' ) );
 			}
@@ -307,7 +310,7 @@ class Plugin extends Pattern\Singleton {
 	/**
 	 * Get analyzer instance.
 	 *
-	 * @return \Hametuha\Kagome\Analyzer|null
+	 * @return \Hametuha\KagomeWp\Analyzer|null
 	 */
 	public function get_analyzer() {
 		return $this->analyzer;

@@ -11,6 +11,12 @@
 	<exclude-pattern>*/assets/js/build/*</exclude-pattern>
 	<exclude-pattern>*/tests/*</exclude-pattern>
 
+	<!--
+		Analyzer.php is intentionally WordPress-independent and follows PSR-12 so it
+		can be extracted as a standalone library. Keep it out of the WPCS ruleset.
+	-->
+	<exclude-pattern>*/src/Analyzer.php</exclude-pattern>
+
 	<!-- Rules -->
 	<rule ref="WordPress">
 		<!-- Allow short array syntax -->

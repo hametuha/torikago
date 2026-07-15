@@ -271,17 +271,21 @@ class Settings extends Pattern\Singleton {
 	/**
 	 * Get default binary path.
 	 *
-	 * @return string|null Default binary path.
+	 * Delegates OS/architecture resolution to the (WP-independent) Analyzer so the
+	 * bundled binary under `resources/kagome/` is the single source of truth.
+	 *
+	 * @return string|null Default binary path, or null when no bundled binary
+	 *                     matches the current OS/architecture.
 	 */
 	private function get_default_binary_path() {
-		$default_path = null;
-
-		// Check wp-env mapped directory first.
-		if ( defined( 'WP_CONTENT_DIR' ) && file_exists( WP_CONTENT_DIR . '/kagome/kagome-cli-linux' ) ) {
-			$default_path = WP_CONTENT_DIR . '/kagome/kagome-cli-linux';
+		try {
+			$default_path = Analyzer::detectBinaryPath();
+		} catch ( \RuntimeException $e ) {
+			// Unsupported OS/architecture: no bundled binary available.
+			return null;
 		}
 
-		return $default_path;
+		return file_exists( $default_path ) ? $default_path : null;
 	}
 
 	/**

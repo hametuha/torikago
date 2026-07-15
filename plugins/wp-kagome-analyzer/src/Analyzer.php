@@ -1,6 +1,6 @@
 <?php
 
-namespace Hametuha\Kagome;
+namespace Hametuha\KagomeWp;
 
 /**
  * Kagome Japanese morphological analyzer wrapper for PHP
@@ -8,7 +8,13 @@ namespace Hametuha\Kagome;
  * This class provides a PHP interface to the Kagome morphological analyzer binary.
  * It handles process communication, error handling, and result parsing.
  *
- * @package Hametuha\Kagome
+ * NOTE: This class is intentionally WordPress-independent (it never calls any
+ * WordPress function or relies on any WP constant). Keep it that way so it can be
+ * extracted and reused as a standalone library by copying this single file.
+ * Because of that portability contract it follows PSR-12 and is excluded from the
+ * plugin's WPCS ruleset (see phpcs.xml).
+ *
+ * @package Hametuha\KagomeWp
  */
 class Analyzer
 {
@@ -38,11 +44,18 @@ class Analyzer
     public function __construct(?string $binaryPath = null)
     {
         if ($binaryPath === null) {
-            $binaryPath = $this->detectBinaryPath();
+            $binaryPath = self::detectBinaryPath();
         }
 
         if (!file_exists($binaryPath)) {
             throw new \RuntimeException("Kagome binary not found at: $binaryPath");
+        }
+
+        // The binary is bundled inside the plugin. When a plugin is installed from
+        // a ZIP upload the executable bit is stripped, so try to restore it once
+        // before giving up (activation also attempts this, this is the safety net).
+        if (!is_executable($binaryPath)) {
+            @chmod($binaryPath, 0755);
         }
 
         if (!is_executable($binaryPath)) {
@@ -53,40 +66,33 @@ class Analyzer
     }
 
     /**
-     * Detect the appropriate kagome binary path based on the operating system
+     * Detect the appropriate kagome binary path based on OS and CPU architecture.
+     *
+     * Binaries are bundled under `<plugin-root>/resources/kagome/` with
+     * arch-explicit names so a single artifact runs on both x86_64 and arm64 hosts
+     * (e.g. Intel and Graviton EC2 instances).
      *
      * @return string The detected binary path
-     * @throws \RuntimeException If the operating system is not supported
+     * @throws \RuntimeException If the operating system / architecture is not supported
      */
-    private function detectBinaryPath(): string
+    public static function detectBinaryPath(): string
     {
-        // Try Docker mount path first
-        $dockerPath = '/usr/local/bin/kagome-binary/kagome-binary/';
+        $baseDir = dirname(__DIR__) . '/resources/kagome/';
 
-        // Try local development path
-        $localPath = dirname(__DIR__, 3) . '/bin/kagome-binary/';
+        $os = match (PHP_OS_FAMILY) {
+            'Darwin' => 'darwin',
+            'Linux'  => 'linux',
+            default  => throw new \RuntimeException('Unsupported operating system: ' . PHP_OS_FAMILY),
+        };
 
-        if (PHP_OS_FAMILY === 'Darwin') {
-            $binaryName = 'kagome-cli-macos-arm64';
-        } elseif (PHP_OS_FAMILY === 'Linux') {
-            $binaryName = 'kagome-cli-linux';
-        } else {
-            throw new \RuntimeException('Unsupported operating system: ' . PHP_OS_FAMILY);
-        }
+        $machine = strtolower(php_uname('m'));
+        $arch = match (true) {
+            in_array($machine, ['x86_64', 'amd64'], true)   => 'amd64',
+            in_array($machine, ['aarch64', 'arm64'], true)  => 'arm64',
+            default => throw new \RuntimeException('Unsupported CPU architecture: ' . $machine),
+        };
 
-        // Check Docker path first
-        if (file_exists($dockerPath . $binaryName)) {
-            return $dockerPath . $binaryName;
-        }
-
-        // Fallback to local path
-        if (file_exists($localPath . $binaryName)) {
-            return $localPath . $binaryName;
-        }
-
-        throw new \RuntimeException(
-            "Kagome binary not found. Tried: {$dockerPath}{$binaryName}, {$localPath}{$binaryName}"
-        );
+        return $baseDir . "kagome-{$os}-{$arch}";
     }
 
     /**
@@ -167,7 +173,7 @@ class Analyzer
             error_log('Kagome raw output (first 200 chars): ' . substr($output, 0, 200));
             error_log('JSON error: ' . json_last_error_msg());
             error_log('Text length: ' . strlen($text) . ', Output length: ' . strlen($output));
-            
+
             // Try to handle common JSON issues
             $cleaned_output = $this->cleanJsonOutput($output);
             if ($cleaned_output !== $output) {
@@ -177,7 +183,7 @@ class Analyzer
                     return $result;
                 }
             }
-            
+
             throw new \RuntimeException('Failed to parse kagome output: ' . json_last_error_msg());
         }
 
@@ -195,15 +201,15 @@ class Analyzer
         // Remove any BOM or leading whitespace
         $cleaned = ltrim($output, "\xEF\xBB\xBF");
         $cleaned = trim($cleaned);
-        
+
         // Remove trailing commas in JSON arrays/objects
         $cleaned = preg_replace('/,(\s*[}\]])/', '$1', $cleaned);
-        
+
         // Fix incomplete JSON arrays (add closing bracket if missing)
         if (substr($cleaned, -1) !== ']' && strpos($cleaned, '[') === 0) {
             $cleaned .= ']';
         }
-        
+
         return $cleaned;
     }
 
