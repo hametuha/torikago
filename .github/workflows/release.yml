@@ -1,0 +1,73 @@
+name: Build release package
+
+on:
+  release:
+    types:
+      - published
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  package:
+    name: Package plugin ZIP (with bundled binaries)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 'stable'
+
+      # Produces linux-amd64 / linux-arm64 / darwin-arm64 under resources/kagome.
+      - name: Build kagome binaries
+        run: bash bin/build.sh
+
+      - name: Setup PHP
+        uses: shivammathur/setup-php@v2
+        with:
+          php-version: '8.1'
+          tools: composer
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Install runtime dependencies
+        working-directory: plugins/wp-kagome-analyzer
+        run: composer install --no-dev --optimize-autoloader --no-progress
+
+      - name: Stage and zip plugin
+        run: |
+          STAGE="${RUNNER_TEMP}/wp-kagome-analyzer"
+          rsync -a \
+            --exclude='.git*' \
+            --exclude='node_modules' \
+            --exclude='tests' \
+            --exclude='phpunit.xml.dist' \
+            --exclude='phpcs.xml' \
+            --exclude='.wp-env.json' \
+            --exclude='package.json' \
+            --exclude='package-lock.json' \
+            --exclude='.phpunit.result.cache' \
+            --exclude='resources/kagome/kagome-darwin-*' \
+            plugins/wp-kagome-analyzer/ "${STAGE}/"
+          ( cd "${RUNNER_TEMP}" && zip -r -q "${GITHUB_WORKSPACE}/wp-kagome-analyzer.zip" wp-kagome-analyzer )
+
+      # Fail loudly if the Linux binaries did not make it into the package.
+      - name: Verify bundled binaries
+        run: |
+          unzip -l wp-kagome-analyzer.zip 'wp-kagome-analyzer/resources/kagome/kagome-linux-amd64'
+          unzip -l wp-kagome-analyzer.zip 'wp-kagome-analyzer/resources/kagome/kagome-linux-arm64'
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: wp-kagome-analyzer
+          path: wp-kagome-analyzer.zip
+
+      - name: Attach ZIP to release
+        if: github.event_name == 'release'
+        run: gh release upload "${{ github.event.release.tag_name }}" wp-kagome-analyzer.zip --clobber
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

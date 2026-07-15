@@ -32,6 +32,11 @@ plugin runs on both x86_64 and arm64 (e.g. Intel and Graviton EC2).
 
 ## 🛠️ Development
 
+> The binaries under `resources/kagome/` are **build artifacts and are not
+> committed to git** (they are gitignored). Build them locally with `bin/build.sh`,
+> or grab a packaged plugin ZIP from a GitHub Release (built by CI). A fresh
+> clone has no binaries until you build them.
+
 Build/refresh the bundled binaries (needs Go; kagome is pure Go so this
 cross-compiles without a C toolchain):
 
@@ -58,8 +63,10 @@ npm install && npm run env -- start
 
 ## 🚀 Deployment notes
 
-- Deploying the plugin must include `composer install --no-dev` (the plugin
-  relies on Composer's autoloader for its own classes).
+- Deploy the packaged ZIP from a GitHub Release (CI builds the binaries and runs
+  `composer install --no-dev`), or replicate those two steps when deploying from
+  source. A bare `git` checkout has neither the binaries nor `vendor/`.
+- The release ZIP ships only the Linux binaries (the darwin build is dev-only).
 - Installing from a ZIP upload strips the executable bit from the bundled
   binary; the plugin restores it on activation (`chmod 0755`), with a fallback
   attempt in `Analyzer`'s constructor. Hosts that forbid `chmod` will surface an
