@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: Kagome Analyzer
- * Plugin URI: https://github.com/fumikito/php-kagome
+ * Plugin URI: https://github.com/hametuha/torikago
  * Description: Japanese text morphological analysis plugin powered by Kagome analyzer. Provides APIs and tools for analyzing Japanese text structure.
  * Version: 1.0.0
  * Requires at least: 6.0
