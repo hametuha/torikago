@@ -185,7 +185,7 @@ reused as a standalone library; it is excluded from the WPCS ruleset.
 ## Project Structure
 
 ```
-php-kagome/                       # repo root = the plugin
+torikago/                         # repo root = the plugin
 ├── wp-kagome-analyzer.php        # Main plugin file
 ├── composer.json                 # PHP dependencies (autoload Hametuha\KagomeWp\ => src/)
 ├── .wp-env.json                  # WordPress environment config
