@@ -16,6 +16,7 @@ package.json
 package-lock.json
 composer.lock
 .gitignore
+.node-version
 .gitattributes
 .distignore
 .phpunit.result.cache
